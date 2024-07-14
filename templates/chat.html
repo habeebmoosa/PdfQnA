@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with PDF files</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+        }
+        .pdf-container {
+            flex: 1;
+            overflow: auto;
+            border-right: 1px solid #ccc;
+            padding: 16px;
+        }
+        .pdf-container iframe {
+            width: 100%;
+            height: 100%;
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+        }
+        .chat-history {
+            overflow-y: auto;
+            flex-grow: 1;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #d1e7fd;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+            align-self: flex-start;
+        }
+        .chat-input {
+            display: flex;
+        }
+        .chat-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .chat-input button {
+            padding: 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="pdf-container">
+            <iframe id="pdf-viewer" src=""></iframe>
+        </div>
+        <div class="chat-container">
+            <div class="chat-history" id="chat-history">
+            </div>
+            <div class="chat-input">
+                <input type="text" id="question" placeholder="Enter your question">
+                <button onclick="handler()">Ask</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function appendMessage(message, type) {
+            const chatHistory = document.getElementById("chat-history");
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message", type === "user" ? "user-message" : "bot-message");
+            messageElement.textContent = message;
+            chatHistory.appendChild(messageElement);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function handler() {
+            const questionInput = document.getElementById("question");
+            const question = questionInput.value;
+            if (!question.trim()) return;
+            
+            appendMessage(question, "user");
+            questionInput.value = "";
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question: question })
+            })
+            .then(response => response.json())
+            .then(data => {
+                appendMessage(data.answer, "bot");
+            })
+            .catch(error => {
+                appendMessage("Error: " + error, "bot");
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch('/pdf')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("pdf-viewer").src = data.pdf_url;
+                })
+                .catch(error => {
+                    console.error("Error loading PDF: ", error);
+                });
+        });
+    </script>
+</body>
+</html>

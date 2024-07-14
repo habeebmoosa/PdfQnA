@@ -1,0 +1,5 @@
+.env
+uploads
+faiss_index
+aienv
+app.ipynb
